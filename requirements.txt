@@ -1,0 +1,91 @@
+#requirements.txt
+snowflake-snowpark-python
+streamlit
+requests
+import streamlit as st
+import requests
+import pandas as pd
+
+# Title of the Streamlit app
+st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
+
+# Input for the name on the smoothie
+name_on_order = st.text_input('Name on Smoothie:')
+st.write('The name on your Smoothie will be:', name_on_order)
+
+# Get active Snowflake session (if needed)
+session = get_active_session()
+
+# Fetch fruit data from the database
+my_dataframe = session.table("smoothies.public.fruit_options")
+
+# Extract fruit names for multiselect options
+fruit_names = [row['name'] for row in my_dataframe.collect()]  # Replace 'name' with the correct column if necessary
+
+# Multiselect for ingredients (up to 5 selections)
+ingredients_list = st.multiselect(
+    'Choose up to 5 ingredients:',
+    fruit_names,
+    max_selections=5
+)
+
+# Check if ingredients have been selected
+if ingredients_list:
+    # List to hold the nutrition data for each selected fruit
+    nutrition_data = []
+
+    # Loop through each selected fruit
+    for fruit_chosen in ingredients_list:
+        # Call the SmoothieFroot API for each fruit
+        smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen.lower()}")
+
+        # Check if the API call was successful (status code 200)
+        if smoothiefroot_response.status_code == 200:
+            # Parse JSON response
+            fruit_data = smoothiefroot_response.json()
+
+            # Extract the nutritional information (assuming the JSON has this structure)
+            fruit_name = fruit_data.get('name', 'Unknown Fruit')
+            calories = fruit_data.get('calories', 'N/A')
+            protein = fruit_data.get('protein', 'N/A')
+            carbs = fruit_data.get('carbs', 'N/A')
+            fat = fruit_data.get('fat', 'N/A')
+
+            # Store the nutrition data in a dictionary
+            nutrition_data.append({
+                'Fruit': fruit_name,
+                'Calories': calories,
+                'Protein': protein,
+                'Carbs': carbs,
+                'Fat': fat
+            })
+        else:
+            st.error(f"Failed to retrieve data for {fruit_chosen}.")
+
+    # Display the nutrition data in a dataframe
+    if nutrition_data:
+        sf_df = pd.DataFrame(nutrition_data)
+        st.write("Nutrition Information for Selected Fruits:")
+        st.dataframe(sf_df)
+
+    # Generate the SQL insert statement for the smoothie order
+    ingredients_string = ', '.join(ingredients_list)
+    my_insert_stmt = f"""
+    INSERT INTO smoothies.public.orders (name_on_order, ingredients)
+    VALUES ('{name_on_order}', '{ingredients_string}');
+    """
+    st.write("Generated SQL:", my_insert_stmt)
+
+    # Submit the order
+    if st.button('Submit Order'):
+        # Execute the SQL statement in Snowflake (uncomment this in your live environment)
+        # session.sql(my_insert_stmt).collect()
+        st.success("Order submitted successfully!")
+else:
+    st.warning("Please select at least one ingredient.")
+
+
+
+
+
+
