@@ -46,7 +46,7 @@ if ingredients_list:
        #new section to display smoothie fruit information
          import requests
          smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-         st.text(smoothiefroot_response)
+         #st.text(smoothiefroot_response)
 
             # Extract the nutritional information (assuming the JSON has this structure)
             fruit_name = fruit_data.get('name', 'Unknown Fruit')
