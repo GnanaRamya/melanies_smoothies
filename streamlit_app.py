@@ -12,7 +12,14 @@ st.write(
 name_on_order= st.text_input('Name on Smoothie:')
 st.write("The name on your smoothie will be:", name_on_order)
 from snowflake.snowpark.functions import col
-session = get_active_session()
+session = Session.builder.configs({
+    "account": st.secrets["HOXXSYJ-GWB61229"],
+    "user": st.secrets["GNIMMAGADDA1"],
+    "password": st.secrets["Sariyu671@1234"],
+    "warehouse": st.secrets["COMPUTE_WH"],
+    "database": "SMOOTHIES",
+    "schema": "PUBLIC"
+}).create()
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))  # Check exact column name
 #st.dataframe(data=my_dataframe, use_container_width=True)
 
